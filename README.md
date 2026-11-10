@@ -10,7 +10,7 @@ Each app keeps its own save files and settings. It has no ROM browser: the app i
 
 The game apps are native macOS apps written in Swift, with no Qt. They use mGBA's emulator core, built from the unmodified upstream source (a git submodule), so new mGBA versions come in by moving the submodule and rebuilding.
 
-**No ROMs or BIOS files are in this repository.** Use dumps of your own cartridges and console.
+**No ROMs are in this repository.** Use dumps of your own cartridges. Put your own BIOS dumps in `bios/`.
 
 ## Status
 
