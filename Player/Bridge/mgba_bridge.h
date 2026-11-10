@@ -69,7 +69,10 @@ size_t gbp_video_stride(GBPCore*);
 void gbp_run_frame(GBPCore*);
 double gbp_frame_rate(GBPCore*);
 
-/* Audio: interleaved stereo int16. Returns the number of stereo frames read. */
+/* Audio: interleaved stereo int16 at a fixed GBP_AUDIO_RATE. The core's own rate is 131072 Hz for GB and
+ * set by each GBA game (32768-262144 Hz, changeable while running); the bridge resamples it with mGBA's
+ * sinc resampler, as mGBA's Qt frontend does. gbp_audio_read returns the number of stereo frames read. */
+#define GBP_AUDIO_RATE 48000
 unsigned gbp_audio_sample_rate(GBPCore*);
 size_t gbp_audio_available(GBPCore*);
 size_t gbp_audio_read(GBPCore*, int16_t* out, size_t maxFrames);

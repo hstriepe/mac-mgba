@@ -34,6 +34,7 @@ git clone --recurse-submodules https://github.com/hstriepe/mac-mgba.git
 cd Mac-mgba
 scripts/setup-env.sh        # tools, mGBA submodule, mGBA core library, No-Intro DATs, then a check
 scripts/build-app.sh        # → build/GB App Builder.app
+scripts/archive-app.sh      # or: an archive in Xcode's Organizer, signed with your Apple Development certificate
 ```
 
 To work in Xcode, run `xcodegen generate` and open `GBAppBuilder.xcodeproj`.
@@ -80,14 +81,26 @@ These are mGBA's menus, keeping only what applies to a single game:
 
 - **File:** import or export the battery save; load a state (F1–F9) or save one (⇧F1–F9); load or save a state file; take a screenshot (F12)
 - **Emulation:** pause, next frame, reset, fast-forward, cheats, and the solar sensor for carts that have one
-- **View:** frame size 1×–6×, full screen, lock aspect ratio, integer scaling, interframe blending, bilinear filtering, Super Game Boy borders (Game Boy only), mute
+- **View:** frame size 1×–6× (⌘1–⌘6), actual size (⌃⌘A), full screen (⌃⌘F), borderless window (⌘B), lock aspect ratio (⌘A), integer scaling, interframe blending, bilinear filtering, Super Game Boy borders (Game Boy only), mute
+
+### The game window
+
+The game window is a media window, like QuickTime Player's or CapturePlay's:
+
+- **Title bar:** the picture fills the whole window. The title and window buttons appear when the mouse is at the top of the window and hide again 2 seconds later. You can drag the picture to move the window.
+- **Borderless (⌘B):** no title bar or border, and the window stays above other windows. Drag the picture to move it. Full screen turns borderless off.
+- **Lock Aspect Ratio (⌘A):** resizing keeps the screen's shape: 3:2 for GBA, 10:9 for Game Boy, or 8:7 with Super Game Boy borders.
+- **Full screen (⌃⌘F):** the picture is letterboxed in black and the pointer hides until you move the mouse. Press Escape to leave.
+- **Display sleep:** the display stays awake while the game runs and isn't paused, because a game controller doesn't count as activity. Turn this off in Settings › General.
+
+The window's size, position and borderless setting are remembered.
 
 ### Settings
 
 The **Settings** tabs (⌘,) are:
 
-- **General:** where battery saves, states and screenshots go
-- **Audio/Video**
+- **General:** where battery saves, states and screenshots go; pausing in the background; keeping the display awake
+- **Audio/Video:** volume, mute, aspect ratio, borderless window, scaling and filtering
 - **Emulation:** BIOS intro, fast-forward speed, idle loops, rewind
 - **Game Boy:** model, colorization and palette (GB and GBC games)
 - **Game Boy Advance:** Game Boy Player rumble, solar sensor level (GBA games)

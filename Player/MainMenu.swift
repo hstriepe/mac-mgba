@@ -96,11 +96,17 @@ enum MainMenu {
             sizes.addItem(s)
         }
         view.addItem(parent("Frame Size", sizes))
-        let fullScreen = item("Enter Full Screen", #selector(NSWindow.toggleFullScreen(_:)), "f")
+        let actual = item("Actual Size", #selector(AppDelegate.fitToActualSize(_:)), "a", target: target)
+        actual.keyEquivalentModifierMask = [.command, .control]
+        view.addItem(actual)
+        let fullScreen = item("Enter Full Screen", #selector(AppDelegate.toggleGameFullScreen(_:)), "f", target: target)
         fullScreen.keyEquivalentModifierMask = [.command, .control]
         view.addItem(fullScreen)
+        view.addItem(item("Borderless Window", #selector(AppDelegate.toggleBorderless(_:)), "b", target: target))
         view.addItem(.separator())
-        view.addItem(option("Lock Aspect Ratio", "lockAspectRatio", target))
+        let aspect = option("Lock Aspect Ratio", "lockAspectRatio", target)
+        aspect.keyEquivalent = "a"
+        view.addItem(aspect)
         view.addItem(option("Force Integer Scaling", "lockIntegerScaling", target))
         view.addItem(option("Interframe Blending", "interframeBlending", target))
         view.addItem(option("Bilinear Filtering", "resampleVideo", target))

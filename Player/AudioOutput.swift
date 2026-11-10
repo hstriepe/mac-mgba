@@ -1,9 +1,8 @@
 import AVFoundation
 import os
 
-/// Plays the core's stereo int16 samples through AVAudioEngine, which also resamples
-/// from the core's native rate (65536 Hz for GBA, 131072 Hz for GB) to the device rate.
-/// The emulation thread paces itself on `bufferedFrames`.
+/// Plays the bridge's stereo int16 samples (already resampled to `GBP_AUDIO_RATE`, 48 kHz) through
+/// AVAudioEngine, whose mixer converts to the device rate. The emulation thread paces itself on `bufferedFrames`.
 final class AudioOutput {
     let sampleRate: Double
     private let engine = AVAudioEngine()

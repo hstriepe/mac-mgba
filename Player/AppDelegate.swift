@@ -5,7 +5,8 @@ import UniformTypeIdentifiers
 /// The player: one window, one game. In a built app the game comes from `Contents/Resources/Game/`;
 /// the bare template (no game inside) asks for a ROM, for testing.
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItemValidation {
-    private var window: NSWindow?
+    private var windowController: GameWindowController?
+    private var window: NSWindow? { windowController?.window }
     private var gameView: GameView?
     private(set) var session: EmulatorSession?
     private var input: InputController?
@@ -42,6 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
 
     func applicationWillTerminate(_ notification: Notification) {
         gameView?.stopDisplay()
+        windowController?.stop()
         session?.saveCheats()
         session?.stop()
     }
@@ -94,23 +96,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         view.session = session
         view.input = input
         gameView = view
-        applyVideoSettings()
 
         let native = session.platform == Int32(GBP_PLATFORM_GBA.rawValue) ? CGSize(width: 240, height: 160) : CGSize(width: 160, height: 144)
+        view.nativeSize = native
         let scale = CGFloat(session.configInt("videoScale") ?? 3)
-        let window = NSWindow(contentRect: NSRect(origin: .zero, size: CGSize(width: native.width * scale, height: native.height * scale)),
-                              styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-        window.title = appName
-        window.contentView = view
+        let controller = GameWindowController(session: session, view: view, title: appName,
+                                              contentSize: CGSize(width: native.width * scale, height: native.height * scale))
+        let window = controller.window
         window.contentMinSize = native
         window.delegate = self
-        window.collectionBehavior = [.fullScreenPrimary]
-        window.isReleasedWhenClosed = false
         window.center()
         window.setFrameAutosaveName("GameWindow")
+        windowController = controller
+        applyVideoSettings()
         window.makeKeyAndOrderFront(nil)
         window.makeFirstResponder(view)
-        self.window = window
     }
 
     func applyVideoSettings() {
@@ -118,6 +118,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         view.lockAspectRatio = session.configBool("lockAspectRatio")
         view.integerScaling = session.configBool("lockIntegerScaling")
         view.bilinear = session.configBool("resampleVideo")
+        windowController?.applySettings()
     }
 
     func windowDidMiniaturize(_ notification: Notification) {
@@ -197,12 +198,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
 
     @objc func setFrameSize(_ sender: NSMenuItem) {
-        guard let window, let view = gameView else { return }
-        if window.styleMask.contains(.fullScreen) { window.toggleFullScreen(nil) }
-        let native = view.nativeSize
         session?.setConfig("videoScale", String(sender.tag))
-        window.setContentSize(CGSize(width: native.width * CGFloat(sender.tag), height: native.height * CGFloat(sender.tag)))
+        windowController?.setScale(sender.tag)
     }
+
+    /// CapturePlay's "Fit to Actual Size": the 1× frame size.
+    @objc func fitToActualSize(_ sender: Any?) {
+        session?.setConfig("videoScale", "1")
+        windowController?.setScale(1)
+    }
+
+    @objc func toggleBorderless(_ sender: Any?) { windowController?.toggleBorderless() }
+    @objc func toggleGameFullScreen(_ sender: Any?) { windowController?.toggleFullScreen() }
 
     @objc func toggleConfigOption(_ sender: NSMenuItem) {
         guard let session, let key = sender.representedObject as? String else { return }
@@ -279,6 +286,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             item.state = session.fastForwardToggle ? .on : .off
         case #selector(toggleConfigOption(_:)):
             if let key = item.representedObject as? String { item.state = session.configBool(key) ? .on : .off }
+        case #selector(toggleBorderless(_:)):
+            item.state = windowController?.isBorderless == true ? .on : .off
+            return windowController?.isFullScreen != true
+        case #selector(toggleGameFullScreen(_:)):
+            item.title = windowController?.isFullScreen == true ? "Exit Full Screen" : "Enter Full Screen"
         case #selector(setFrameSize(_:)):
             item.state = (session.configInt("videoScale") ?? 3) == item.tag ? .on : .off
         case #selector(setSolarLevel(_:)):

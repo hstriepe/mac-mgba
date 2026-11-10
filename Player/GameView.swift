@@ -8,7 +8,18 @@ final class GameView: NSView {
     private let screen = CALayer()
     private var lastSequence = -1
     private var displayLink: CADisplayLink?
-    private var frameSize = CGSize(width: 240, height: 160)
+    /// Native picture size (240×160 for GBA, 160×144 for GB, 256×224 with Super Game Boy borders).
+    /// Set from the platform before the first frame; then follows the frames.
+    var nativeSize = CGSize(width: 240, height: 160) { didSet { needsLayout = true } }
+
+    enum MouseEvent {
+        case entered, exited, moved(NSPoint)
+    }
+
+    /// Mouse movement over the picture (title bar and pointer hiding in `GameWindowController`).
+    var onMouse: ((MouseEvent) -> Void)?
+    /// The native size changed (for example Super Game Boy borders switched on or off).
+    var onNativeSizeChange: (() -> Void)?
 
     var lockAspectRatio = true { didSet { needsLayout = true } }
     var integerScaling = false { didSet { needsLayout = true } }
@@ -51,9 +62,9 @@ final class GameView: NSView {
     @objc private func tick(_ link: CADisplayLink) {
         guard let session, let image = session.frames.image(after: &lastSequence) else { return }
         let size = CGSize(width: image.width, height: image.height)
-        if size != frameSize {
-            frameSize = size
-            needsLayout = true
+        if size != nativeSize {
+            nativeSize = size
+            onNativeSizeChange?()
         }
         screen.contents = image
     }
@@ -63,9 +74,9 @@ final class GameView: NSView {
         let bounds = self.bounds
         var rect = bounds
         if lockAspectRatio || integerScaling {
-            var scale = min(bounds.width / frameSize.width, bounds.height / frameSize.height)
+            var scale = min(bounds.width / nativeSize.width, bounds.height / nativeSize.height)
             if integerScaling { scale = max(1, floor(scale)) }
-            let size = CGSize(width: frameSize.width * scale, height: frameSize.height * scale)
+            let size = CGSize(width: nativeSize.width * scale, height: nativeSize.height * scale)
             rect = CGRect(x: (bounds.width - size.width) / 2, y: (bounds.height - size.height) / 2,
                           width: size.width, height: size.height)
         }
@@ -73,13 +84,32 @@ final class GameView: NSView {
         screen.contentsScale = window?.backingScaleFactor ?? 2
     }
 
-    /// Native picture size (240×160 for GBA, 160×144 for GB, 256×224 with Super Game Boy borders).
-    var nativeSize: CGSize { frameSize }
+    // MARK: Mouse
+
+    /// Dragging the picture moves the window (as in QuickTime; the only way to move a borderless one).
+    override var mouseDownCanMoveWindow: Bool { true }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        trackingAreas.forEach { removeTrackingArea($0) }
+        addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow, .inVisibleRect],
+                                       owner: self, userInfo: nil))
+    }
+
+    override func mouseEntered(with event: NSEvent) { onMouse?(.entered) }
+    override func mouseExited(with event: NSEvent) { onMouse?(.exited) }
+    override func mouseMoved(with event: NSEvent) { onMouse?(.moved(convert(event.locationInWindow, from: nil))) }
 
     // MARK: Keys
 
     override func keyDown(with event: NSEvent) {
-        if input?.keyDown(event) != true { super.keyDown(with: event) }
+        if input?.keyDown(event) == true { return }
+        // Escape leaves full screen (unless it is bound to a game key, handled above).
+        if event.keyCode == 53, let window, window.styleMask.contains(.fullScreen) {
+            window.toggleFullScreen(nil)
+            return
+        }
+        super.keyDown(with: event)
     }
 
     override func keyUp(with event: NSEvent) {

@@ -12,6 +12,7 @@
 #include <mgba/core/rewind.h>
 #include <mgba/core/serialize.h>
 #include <mgba-util/audio-buffer.h>
+#include <mgba-util/audio-resampler.h>
 #include <mgba-util/configuration.h>
 #include <mgba-util/vfs.h>
 
@@ -33,6 +34,8 @@
 
 #define VIDEO_STRIDE 256
 #define VIDEO_HEIGHT_MAX 224
+#define AUDIO_CORE_SAMPLES 8192
+#define AUDIO_OUT_SAMPLES 0x4000
 
 struct GBPLux {
 	struct GBALuminanceSource d;
@@ -58,6 +61,10 @@ struct GBPCore {
 	 * included, into its own user layer, so that layer must not be what gets saved. */
 	struct Configuration user;
 	mColor* video;
+
+	/* Core audio (its own, possibly changing, rate) -> audioOut at GBP_AUDIO_RATE. */
+	struct mAudioResampler resampler;
+	struct mAudioBuffer audioOut;
 
 	struct mCoreRewindContext rewind;
 	bool rewindEnabled;
@@ -160,7 +167,11 @@ GBPCore* gbp_create(const char* romPath, const char* defaultsPath, const char* c
 
 	gbp->video = calloc(VIDEO_STRIDE * VIDEO_HEIGHT_MAX, sizeof(mColor));
 	core->setVideoBuffer(core, gbp->video, VIDEO_STRIDE);
-	core->setAudioBufferSize(core, 2048);
+	/* Room for a whole frame at the highest rate (262144 Hz GBA: ~4390 samples), read after every frame. */
+	core->setAudioBufferSize(core, AUDIO_CORE_SAMPLES);
+	mAudioBufferInit(&gbp->audioOut, AUDIO_OUT_SAMPLES, 2);
+	mAudioResamplerInit(&gbp->resampler, mINTERPOLATOR_SINC);
+	mAudioResamplerSetDestination(&gbp->resampler, &gbp->audioOut, GBP_AUDIO_RATE);
 
 	gbp->lux.p = gbp;
 	gbp->lux.d.sample = _luxSample;
@@ -197,6 +208,8 @@ void gbp_destroy(GBPCore* gbp) {
 	gbp->core->unloadROM(gbp->core);
 	mCoreConfigDeinit(&gbp->core->config);
 	gbp->core->deinit(gbp->core);
+	mAudioResamplerDeinit(&gbp->resampler);
+	mAudioBufferDeinit(&gbp->audioOut);
 	ConfigurationDeinit(&gbp->user);
 	free(gbp->video);
 	free(gbp->romPath);
@@ -339,15 +352,25 @@ double gbp_frame_rate(GBPCore* gbp) {
 }
 
 unsigned gbp_audio_sample_rate(GBPCore* gbp) {
-	return gbp->core->audioSampleRate(gbp->core);
+	UNUSED(gbp);
+	return GBP_AUDIO_RATE;
+}
+
+/* Moves what the core produced into audioOut, at the core's current rate (a GBA game can change it). */
+static void _audioResample(GBPCore* gbp) {
+	struct mCore* core = gbp->core;
+	mAudioResamplerSetSource(&gbp->resampler, core->getAudioBuffer(core), core->audioSampleRate(core), true);
+	mAudioResamplerProcess(&gbp->resampler);
 }
 
 size_t gbp_audio_available(GBPCore* gbp) {
-	return mAudioBufferAvailable(gbp->core->getAudioBuffer(gbp->core));
+	_audioResample(gbp);
+	return mAudioBufferAvailable(&gbp->audioOut);
 }
 
 size_t gbp_audio_read(GBPCore* gbp, int16_t* out, size_t maxFrames) {
-	return mAudioBufferRead(gbp->core->getAudioBuffer(gbp->core), out, maxFrames);
+	_audioResample(gbp);
+	return mAudioBufferRead(&gbp->audioOut, out, maxFrames);
 }
 
 void gbp_set_keys(GBPCore* gbp, uint32_t keys) {

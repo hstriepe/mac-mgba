@@ -107,6 +107,7 @@ final class EmulatorSession: @unchecked Sendable {
             "frameskip": "0", "fastForwardRatio": "-1", "rewindEnable": "1", "rewindBufferCapacity": "600",
             "rewindBufferInterval": "1", "videoScale": "3", "pauseOnFocusLost": "0", "sgb.borders": "1",
             "idleOptimization": "detect", "allowOpposingDirections": "1", "solarLevel": "6",
+            GameWindowController.borderlessKey: "0", GameWindowController.preventDisplaySleepKey: "1",
         ]
         for (key, value) in playerDefaults where gbp_config_get(core, key) == nil {
             gbp_config_set_default(core, key, value)

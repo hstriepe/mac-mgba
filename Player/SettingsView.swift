@@ -166,6 +166,7 @@ struct SettingsView: View {
             }
             Section {
                 Toggle("Pause when the app is in the background", isOn: model.bool("pauseOnFocusLost"))
+                Toggle("Keep the display awake while playing", isOn: model.bool(GameWindowController.preventDisplaySleepKey))
             }
             if let message = model.message {
                 Text(message).font(.callout).foregroundStyle(.secondary)
@@ -200,6 +201,7 @@ struct SettingsView: View {
             }
             Section("Video") {
                 Toggle("Lock aspect ratio", isOn: model.bool("lockAspectRatio"))
+                Toggle("Borderless window (floats above other windows)", isOn: model.bool(GameWindowController.borderlessKey))
                 Toggle("Force integer scaling", isOn: model.bool("lockIntegerScaling"))
                 Toggle("Interframe blending", isOn: model.bool("interframeBlending"))
                 Toggle("Bilinear filtering", isOn: model.bool("resampleVideo"))
