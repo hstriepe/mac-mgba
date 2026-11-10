@@ -1,0 +1,103 @@
+# XcodeGen spec for GBAppBuilder.xcodeproj (regenerate with `xcodegen generate` or scripts/build-app.sh).
+# Edit this file, not the generated project.
+name: GBAppBuilder
+options:
+  bundleIdPrefix: com.windholm
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    ARCHS: arm64
+    ENABLE_HARDENED_RUNTIME: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    DEAD_CODE_STRIPPING: YES
+    DEVELOPMENT_TEAM: D6WY385Q4D
+    CODE_SIGN_STYLE: Manual
+  configs:
+    Debug:
+      CODE_SIGN_IDENTITY: "-"
+    Release:
+      CODE_SIGN_IDENTITY: "Developer ID Application"
+      OTHER_CODE_SIGN_FLAGS: "--timestamp"
+
+targets:
+  # The player template: mGBA's core (static libmgba from the mgba/ submodule) in a native AppKit/SwiftUI app.
+  # GB App Builder copies it once per game and puts the game inside.
+  Player:
+    type: application
+    platform: macOS
+    sources:
+      - path: Player
+        excludes:
+          - "Info.plist"
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_NAME: "GB Player"
+        PRODUCT_BUNDLE_IDENTIFIER: com.windholm.gb-appbuilder.player
+        INFOPLIST_FILE: Player/Info.plist
+        SWIFT_OBJC_BRIDGING_HEADER: Player/Bridge/Player-Bridging-Header.h
+        HEADER_SEARCH_PATHS: $(SRCROOT)/build/libmgba/install/include
+        LIBRARY_SEARCH_PATHS: $(SRCROOT)/build/libmgba/install/lib
+        OTHER_LDFLAGS: -lmgba
+        GCC_WARN_UNUSED_PARAMETER: NO
+        # One self-contained executable even in Debug (the builder copies this app as the template).
+        ENABLE_DEBUG_DYLIB: NO
+        ENABLE_PREVIEWS: NO
+    preBuildScripts:
+      - name: Build libmgba (static, from the mgba submodule)
+        script: |
+          "$SRCROOT/scripts/build-libmgba.sh" --if-needed
+        basedOnDependencyAnalysis: false
+
+  GBAppBuilder:
+    type: application
+    platform: macOS
+    sources:
+      - path: Builder
+        excludes:
+          - "Info.plist"
+          - "Icon/**"
+      - path: Shared
+    dependencies:
+      - target: Player
+        embed: true
+        codeSign: false
+        copy:
+          destination: resources
+          subpath: Template
+    settings:
+      base:
+        PRODUCT_NAME: "GB App Builder"
+        PRODUCT_BUNDLE_IDENTIFIER: com.windholm.gb-appbuilder
+        INFOPLIST_FILE: Builder/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    postCompileScripts:
+      - name: Bundle BIOS, DATs, system icons
+        script: |
+          "$SRCROOT/scripts/bundle-builder-resources.sh"
+        basedOnDependencyAnalysis: false
+
+schemes:
+  GBAppBuilder:
+    build:
+      targets:
+        GBAppBuilder: all
+        Player: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+  Player:
+    build:
+      targets:
+        Player: all
+    run:
+      config: Debug
+      environmentVariables:
+        GBPLAYER_BIOS: $(SRCROOT)/bios
