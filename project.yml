@@ -12,6 +12,7 @@ options:
 settings:
   base:
     MARKETING_VERSION: "0.1.0"
+    # Fallback only: scripts/set-build-number.sh sets each built app's CFBundleVersion to `git rev-list --count HEAD`.
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "5.0"
     MACOSX_DEPLOYMENT_TARGET: "14.0"
@@ -62,6 +63,11 @@ targets:
         script: |
           "$SRCROOT/scripts/build-libmgba.sh" --if-needed
         basedOnDependencyAnalysis: false
+    postBuildScripts:
+      - name: Build number (commit count)
+        script: |
+          "$SRCROOT/scripts/set-build-number.sh"
+        basedOnDependencyAnalysis: false
 
   GBAppBuilder:
     type: application
@@ -89,6 +95,11 @@ targets:
       - name: Bundle BIOS, DATs, system icons
         script: |
           "$SRCROOT/scripts/bundle-builder-resources.sh"
+        basedOnDependencyAnalysis: false
+    postBuildScripts:
+      - name: Build number (commit count)
+        script: |
+          "$SRCROOT/scripts/set-build-number.sh"
         basedOnDependencyAnalysis: false
 
 schemes:
