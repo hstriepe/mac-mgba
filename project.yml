@@ -3,6 +3,9 @@
 name: GBAppBuilder
 options:
   bundleIdPrefix: com.windholm
+  # The Xcode in use: without it Xcode offers "Update to recommended settings", which drops ARCHS below and
+  # makes Release builds also link for Intel, where the arm64-only libmgba has no symbols.
+  xcodeVersion: "27.2"
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
@@ -13,6 +16,8 @@ settings:
     SWIFT_VERSION: "5.0"
     MACOSX_DEPLOYMENT_TARGET: "14.0"
     ARCHS: arm64
+    # libmgba is built for arm64 only (scripts/build-libmgba.sh); this survives Xcode's settings update.
+    EXCLUDED_ARCHS: x86_64
     ENABLE_HARDENED_RUNTIME: YES
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEAD_CODE_STRIPPING: YES
