@@ -264,9 +264,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if let helpWindow {
             helpWindow.refresh()
         } else {
-            let controller = HelpWindowController(session: session, appName: appName)
-            controller.onOpenManual = { [weak self] in self?.showManual(nil) }
-            helpWindow = controller
+            helpWindow = HelpWindowController(session: session, appName: appName)
         }
         helpWindow?.showWindow(nil)
     }

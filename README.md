@@ -1,5 +1,10 @@
 # GB App Builder
 
+
+
+**Note:** I wrote this using my Claude/AI scaffold in a couple of hours because I wanted this app. 
+**--**  If you object to AI, just skip past.
+
 Turns a **Game Boy, Game Boy Color or Game Boy Advance** ROM into its own **Mac app**. You open a `.gb`, `.gbc`, `.gba` or `.zip` file and get a self-contained, double-clickable app with:
 
 - the [mGBA](https://mgba.io) emulator core

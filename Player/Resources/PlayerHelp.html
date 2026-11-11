@@ -40,9 +40,6 @@
   th { background: var(--head); font-weight: 600; }
   td:first-child { white-space: nowrap; }
   .note { color: var(--muted); font-size: 13px; }
-  .manual { display: inline-block; margin: 6px 0 4px; padding: 7px 14px; border-radius: 8px; background: var(--accent);
-            color: #fff; font-weight: 600; }
-  .manual:hover { text-decoration: none; filter: brightness(1.08); }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -50,11 +47,6 @@
 
 <h1><span data-text="appName">Game</span> Help</h1>
 <div class="sub"><span data-text="systemName">Game Boy</span> game, emulated by mGBA <span data-text="mgbaVersion"></span></div>
-
-<div data-if="manual">
-  <a class="manual" href="gbp:manual">Open the Game Manual</a>
-  <div class="note">The original instruction booklet, also in Help › Game Manual (<kbd>⌥⌘?</kbd>).</div>
-</div>
 
 <nav>
   <a href="#playing">Playing</a><a href="#window">The window</a><a href="#menus">Menus</a><a href="#settings">Settings</a>

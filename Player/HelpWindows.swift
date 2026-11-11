@@ -9,7 +9,6 @@ final class HelpWindowController: NSWindowController, WKNavigationDelegate {
     private let webView: WKWebView
     private let session: EmulatorSession
     private let appName: String
-    var onOpenManual: (() -> Void)?
 
     init(session: EmulatorSession, appName: String) {
         self.session = session
@@ -84,16 +83,13 @@ final class HelpWindowController: NSWindowController, WKNavigationDelegate {
         return json
     }
 
-    // Links: web pages open in the browser; "gbp:manual" opens the game's manual.
+    // Links: web pages open in the browser.
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void) {
         guard let url = navigationAction.request.url else { return decisionHandler(.cancel) }
         switch url.scheme {
         case "file", "about":
             decisionHandler(.allow)
-        case "gbp":
-            if url.absoluteString == "gbp:manual" { onOpenManual?() }
-            decisionHandler(.cancel)
         default:
             NSWorkspace.shared.open(url)
             decisionHandler(.cancel)
