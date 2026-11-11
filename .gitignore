@@ -3,13 +3,12 @@ build/
 apps/
 # Generated from project.yml by xcodegen (scripts/build-app.sh regenerates it)
 GBAppBuilder.xcodeproj/
-# Nintendo BIOS dumps: your own, never published (the builder bundles them when present).
-#
+# Nintendo BIOS dumps: your own (the builder bundles them when present)
 bios/
 # Reference only: a third-party launcher kept for comparison
 example/
 .DS_Store
 .vscode/vscode-notify-desktop-port.json
 xcuserdata/
-# Finder alias to the ROM library (local convenience)
+# Local shortcuts
 ROMs
