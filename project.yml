@@ -53,6 +53,9 @@ targets:
         GCC_WARN_UNUSED_PARAMETER: NO
         # One self-contained executable even in Debug (the builder copies this app as the template).
         ENABLE_DEBUG_DYLIB: NO
+        # Only inside the builder: not a second app in the archive (that makes it a generic archive, and the
+        # Organizer then offers only "Custom" distribution).
+        SKIP_INSTALL: YES
         ENABLE_PREVIEWS: NO
     preBuildScripts:
       - name: Build libmgba (static, from the mgba submodule)
