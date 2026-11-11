@@ -15,7 +15,7 @@ Each app keeps its own save files and settings. It has no ROM browser: the app i
 
 The game apps are native macOS apps written in Swift, with no Qt. They use mGBA's emulator core, built from the unmodified upstream source (a git submodule), so new mGBA versions come in by moving the submodule and rebuilding.
 
-**No ROMs are in this repository.** Use dumps of your own cartridges. Put your own BIOS dumps in `bios/`.
+**No ROMs or BIOS files come with this project.** Use dumps of your own cartridges and console; put the BIOS files in `bios/` (git-ignored).
 
 ## Status
 
@@ -36,7 +36,7 @@ The game apps are native macOS apps written in Swift, with no Qt. They use mGBA'
 
 ```bash
 git clone --recurse-submodules https://github.com/hstriepe/mac-mgba.git
-cd Mac-mgba
+cd mac-mgba
 scripts/setup-env.sh        # tools, mGBA submodule, mGBA core library, No-Intro DATs, then a check
 scripts/build-app.sh        # → build/GB App Builder.app
 scripts/archive-app.sh      # or: an archive in Xcode's Organizer, signed with your Apple Development certificate
@@ -157,8 +157,6 @@ Games built earlier keep their own copy of the core, so rebuild a game to give i
 | `patches/` | Local mGBA patches (none so far) |
 | `scripts/` | Setup, build and icon scripts |
 | `project.yml` | XcodeGen project spec |
-| `AGENTS.md`, `CLAUDE.md` | Primer for contributors and AI assistants |
-| `docs/` | Prompts, change log (`CHAT.md`), decisions |
 
 ## Credits
 
