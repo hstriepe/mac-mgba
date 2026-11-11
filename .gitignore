@@ -11,3 +11,5 @@ example/
 .DS_Store
 .vscode/vscode-notify-desktop-port.json
 xcuserdata/
+# Finder alias to the ROM library (local convenience)
+ROMs
