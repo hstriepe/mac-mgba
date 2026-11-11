@@ -50,17 +50,18 @@ You can use the builder's window or the command line.
 ```bash
 scripts/build-game.sh "/Volumes/Shared/RETRO_GAMES/ROMs/gba/Advance Wars (USA) (Rev 1).zip"
 # → apps/Advance Wars.app
-# options: --name, --icon, --no-boxart, --sign, --bios, --set key=value (any mGBA default)
+# options: --name, --icon, --no-boxart, --manual <pdf>, --no-manual, --sign, --bios, --set key=value (any mGBA default)
 ```
 
 When building, the builder:
 
 1. **Identifies the ROM:** it reads the ROM header and looks the CRC32 up in the No-Intro DATs (from libretro-database). That gives the canonical name, for example "Advance Wars (USA) (Rev 1)", and the app is named "Advance Wars".
-2. **Makes the icon:** it downloads the libretro box art for that name, falling back to the title screen and then to mGBA's system icon. You can also choose or drop your own image.
-3. **Adds the BIOS:** `gba_bios.bin` for GBA games. GB and GBC games get all three Game Boy BIOS files, so any Game Boy model can be chosen later.
-4. **Assembles and signs:** it copies the player, adds the game, BIOS, icon and your defaults, renames the app and signs it. By default it uses your Developer ID with the hardened runtime, so the apps can be notarized.
+2. **Finds the manual:** it looks for the game's original manual in archive.org's Nintendo manual collections, first by No-Intro name and then by title. You can also choose or drop your own PDF.
+3. **Makes the icon:** it downloads the libretro box art for that name, falling back to the title screen and then to mGBA's system icon. You can also choose or drop your own image.
+4. **Adds the BIOS:** `gba_bios.bin` for GBA games. GB and GBC games get all three Game Boy BIOS files, so any Game Boy model can be chosen later.
+5. **Assembles and signs:** it copies the player, adds the game, BIOS, manual, icon and your defaults, renames the app and signs it. By default it uses your Developer ID with the hardened runtime, so the apps can be notarized.
 
-The builder's **Settings** cover the output folder, the ROM library folder (default `/Volumes/Shared/RETRO_GAMES/ROMs`), the BIOS folder, the signing identity, the bundle ID prefix and a default save folder.
+The builder's **Settings** cover the output folder, the ROM library folder (default `/Volumes/Shared/RETRO_GAMES/ROMs`), the BIOS folder, the signing identity, the bundle ID prefix, a default save folder, and whether to download box art and manuals.
 
 ## Playing
 
@@ -83,6 +84,12 @@ These are mGBA's menus, keeping only what applies to a single game:
 - **Emulation:** pause, next frame, reset, fast-forward, cheats, and the solar sensor for carts that have one
 - **View:** frame size 1×–6× (⌘1–⌘6), actual size (⌃⌘A), full screen (⌃⌘F), borderless window (⌘B), lock aspect ratio (⌘A), integer scaling, interframe blending, bilinear filtering, Super Game Boy borders (Game Boy only), mute
 
+### Help and the game's manual
+
+Every game app has **Help › <Game> Help** (⌘?). It covers the keys and controllers, the window, every menu and setting, saves and states, and where files go. It's fitted to the game: it shows your current keys and leaves out what doesn't apply, such as Game Boy settings in a GBA game.
+
+When the builder found a manual (or you gave it one), **Help › Game Manual** (⌥⌘?) opens the original instruction booklet in its own window, at the last page you read. The manuals come from archive.org's Nintendo collections: about 300 Game Boy, 77 Game Boy Color and 92 Game Boy Advance titles. A scan may be from another region than your ROM; Advance Wars' is the European booklet. Downloaded manuals are kept in `~/Library/Caches/com.windholm.gb-appbuilder/Manuals`.
+
 ### The game window
 
 The game window is a media window, like QuickTime Player's or CapturePlay's:
@@ -100,11 +107,17 @@ The window's size, position and borderless setting are remembered.
 The **Settings** tabs (⌘,) are:
 
 - **General:** where battery saves, states and screenshots go; pausing in the background; keeping the display awake
-- **Audio/Video:** volume, mute, aspect ratio, borderless window, scaling and filtering
+- **Audio/Video:** volume, mute, *Clean up GBA music* (GBA games), aspect ratio, borderless window, scaling and filtering
 - **Emulation:** BIOS intro, fast-forward speed, idle loops, rewind
 - **Game Boy:** model, colorization and palette (GB and GBC games)
 - **Game Boy Advance:** Game Boy Player rumble, solar sensor level (GBA games)
 - **Controls**
+
+### GBA music
+
+GBA games mix their music in software at a low rate that each game picks: 13,379 Hz in Advance Wars, 21,024 Hz in Golden Sun. The console plays the result as 8-bit samples without smoothing, which adds a band of harsh, metallic hiss above the music. Small speakers can't reproduce it; studio monitors and good headphones do.
+
+**Clean up GBA music** (on by default; Settings › Audio/Video, or a default in the builder) works out each game's mixing rate while it plays. It filters out everything above that rate's limit and removes a small constant offset in the GBA's output. The music itself is unchanged. The filter also smooths the sharp edges of the GBA's square-wave channels slightly, as the console's own speaker does.
 
 ### Where files go
 

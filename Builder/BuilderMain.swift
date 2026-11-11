@@ -54,6 +54,8 @@ enum CommandLineBuild {
       --name <name>       app name (default: the No-Intro name without region tags)
       --icon <image>      icon image (default: libretro box art, else mGBA's system icon)
       --no-boxart         do not download box art
+      --manual <pdf>      the game's manual (default: downloaded from archive.org by No-Intro name)
+      --no-manual         no manual
       --sign <identity>   codesigning identity, "-" for ad hoc (default: the builder's setting)
       --bios <folder>     BIOS folder (default: the builder's setting, else the bundled BIOS)
       --set key=value     an mGBA default for the app (repeatable), e.g. --set gb.model=CGB
@@ -67,7 +69,7 @@ enum CommandLineBuild {
         while index < arguments.count {
             let argument = arguments[index]
             switch argument {
-            case "--no-boxart", "--help":
+            case "--no-boxart", "--no-manual", "--help":
                 flags.insert(argument)
             case "--set":
                 index += 1
@@ -118,6 +120,30 @@ enum CommandLineBuild {
                 }
             }
 
+            var manual: URL?
+            var manualSource: String?
+            if let path = options["--manual"] {
+                manual = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+                manualSource = manual?.lastPathComponent
+                print("Manual: \(path)")
+            } else if !flags.contains("--no-manual") && settings.fetchManuals {
+                let names = [datName, romURL.deletingPathExtension().lastPathComponent, rom.baseName].compactMap { $0 }
+                let semaphore = DispatchSemaphore(value: 0)
+                var found: ManualFinder.Found?
+                Task.detached {
+                    found = await ManualFinder.find(system: rom.system, names: names)
+                    semaphore.signal()
+                }
+                semaphore.wait()
+                if let found {
+                    manual = found.file
+                    manualSource = found.entry.url?.absoluteString
+                    print("Manual: \(found.entry.name).pdf (archive.org\(found.approximate ? ", another release" : ""))")
+                } else {
+                    print("Manual: none found")
+                }
+            }
+
             var defaults: [String: String] = ["videoScale": "3"]
             defaults.merge(sets) { $1 }
             if defaults["savegamePath"] == nil, !settings.saveFolder.isEmpty { defaults["savegamePath"] = settings.saveFolder }
@@ -127,7 +153,7 @@ enum CommandLineBuild {
                 bundleIDPrefix: settings.bundleIDPrefix,
                 signingIdentity: options["--sign"] ?? settings.identity,
                 biosFolder: options["--bios"].map { URL(fileURLWithPath: ($0 as NSString).expandingTildeInPath, isDirectory: true) } ?? settings.biosURL,
-                defaults: defaults)
+                defaults: defaults, manual: manual, manualSource: manualSource)
             let result = try AppAssembler.build(request) { print($0) }
             for warning in result.warnings { print("Warning: \(warning)") }
             print(result.appURL.path)

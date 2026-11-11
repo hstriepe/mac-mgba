@@ -77,6 +77,14 @@ unsigned gbp_audio_sample_rate(GBPCore*);
 size_t gbp_audio_available(GBPCore*);
 size_t gbp_audio_read(GBPCore*, int16_t* out, size_t maxFrames);
 
+/* GBA music filter. GBA games mix their music in software at a low rate of their own (often 10-21 kHz) and the
+ * hardware plays it as 8-bit sample-and-hold, which adds a flat band of images up to 24 kHz: harsh on studio
+ * monitors, unheard on small speakers. When enabled (GBA only), gbp_audio_read low-passes just below half the
+ * game's current mix rate (read from the timer that drives DirectSound FIFO A) and removes the DC offset. */
+void gbp_set_audio_filter(GBPCore*, bool enabled);
+/* The detected DirectSound mix rate in Hz (0 if unknown, or not a GBA game). */
+unsigned gbp_audio_mix_rate(GBPCore*);
+
 void gbp_set_keys(GBPCore*, uint32_t keys);
 void gbp_reset(GBPCore*);
 

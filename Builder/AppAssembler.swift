@@ -14,6 +14,9 @@ struct BuildRequest {
     var biosFolder: URL?
     /// mGBA config keys written to the app's defaults.ini (the user's settings in the game app override them).
     var defaults: [String: String]
+    /// The game's manual (a PDF), and where it came from (shown in the game's Help).
+    var manual: URL? = nil
+    var manualSource: String? = nil
 }
 
 struct BuildResult {
@@ -102,13 +105,29 @@ enum AppAssembler {
             }
         }
 
+        // Manual
+        var manualInfo: GameManifest.ManualInfo?
+        if let manual = request.manual {
+            if fm.fileExists(atPath: manual.path) {
+                log("Adding the manual (\(manual.lastPathComponent))")
+                let target = gameFolder.appendingPathComponent(GameManifest.manualFileName)
+                try fm.copyItem(at: manual, to: target)
+                // Downloads arrive owner-only (0600); the app's files must be readable by everyone.
+                try fm.setAttributes([.posixPermissions: 0o644], ofItemAtPath: target.path)
+                manualInfo = .init(file: GameManifest.manualFileName, source: request.manualSource ?? manual.lastPathComponent)
+            } else {
+                warnings.append("The manual \(manual.lastPathComponent) was not found; the app has none.")
+            }
+        }
+
         // Manifest and defaults
         let date = ISO8601DateFormatter.string(from: Date(), timeZone: .current, formatOptions: [.withFullDate])
         let manifest = GameManifest(title: request.appName, system: request.rom.system, romFile: request.rom.fileName,
                                     romName: request.romName, crc32: request.rom.crc32, headerTitle: request.rom.headerTitle,
                                     gameCode: request.rom.gameCode.isEmpty ? nil : request.rom.gameCode, bios: bios,
                                     dataFolder: name,
-                                    build: .init(builderVersion: builderVersion, mgbaVersion: mgbaVersion, date: date))
+                                    build: .init(builderVersion: builderVersion, mgbaVersion: mgbaVersion, date: date),
+                                    manual: manualInfo)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         try encoder.encode(manifest).write(to: gameFolder.appendingPathComponent(GameManifest.fileName))

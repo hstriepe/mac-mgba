@@ -17,6 +17,7 @@ final class BuilderSettings: ObservableObject {
     /// Empty = each game's own folder in ~/Library/Application Support/mGBA Games/<name>/saves.
     @AppStorage("saveFolder") var saveFolder = ""
     @AppStorage("fetchBoxArt") var fetchBoxArt = true
+    @AppStorage("fetchManuals") var fetchManuals = true
 
     var outputURL: URL { URL(fileURLWithPath: (outputFolder as NSString).expandingTildeInPath, isDirectory: true) }
     var biosURL: URL? { biosFolder.isEmpty ? nil : URL(fileURLWithPath: (biosFolder as NSString).expandingTildeInPath, isDirectory: true) }
@@ -52,6 +53,9 @@ struct BuilderSettingsView: View {
             }
             Section("Icons") {
                 Toggle("Download box art from the libretro thumbnail server", isOn: $settings.fetchBoxArt)
+            }
+            Section("Manuals") {
+                Toggle("Download game manuals from archive.org's Nintendo manual collections", isOn: $settings.fetchManuals)
             }
         }
         .formStyle(.grouped)

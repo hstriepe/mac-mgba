@@ -20,6 +20,15 @@ struct GameManifest: Codable, Equatable {
     /// Folder name under `~/Library/Application Support/mGBA Games/`.
     var dataFolder: String
     var build: BuildInfo?
+    /// The game's manual, if the builder found or was given one.
+    var manual: ManualInfo?
+
+    struct ManualInfo: Codable, Equatable {
+        /// File name inside `Resources/Game/` (`Manual.pdf`).
+        var file: String
+        /// Where it came from: an archive.org download URL, or the name of the file the user chose.
+        var source: String?
+    }
 
     struct BuildInfo: Codable, Equatable {
         var builderVersion: String
@@ -29,6 +38,7 @@ struct GameManifest: Codable, Equatable {
 
     static let fileName = "game.json"
     static let defaultsFileName = "defaults.ini"
+    static let manualFileName = "Manual.pdf"
 
     var systemName: String {
         switch system {

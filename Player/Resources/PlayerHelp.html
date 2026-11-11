@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Help</title>
+<!--
+  The help in every game app made by GB App Builder (Help › "<Game> Help").
+  The player sets window.gbp before this page runs (HelpWindows.swift): system, hardware, key bindings, manual.
+  data-if="x" shows an element only when gbp.x is true ("!x" when false); data-text="x" is filled with gbp.x;
+  data-key="A" with the key bound to that button.
+-->
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff; --fg: #1d1d1f; --muted: #6e6e73; --line: #d2d2d7; --accent: #c2410c; --code: #f2f2f5; --head: #f7f7f9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1e1e20; --fg: #f2f2f4; --muted: #a1a1a6; --line: #3a3a3e; --accent: #fb923c; --code: #2c2c2f; --head: #262629; }
+  }
+  html { background: var(--bg); }
+  body { font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; color: var(--fg);
+         background: var(--bg); max-width: 760px; margin: 0 auto; padding: 24px 28px 48px; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 18px; margin: 32px 0 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+  h3 { font-size: 15px; margin: 20px 0 6px; }
+  p, ul { margin: 6px 0 10px; }
+  ul { padding-left: 20px; }
+  li { margin: 3px 0; }
+  .sub { color: var(--muted); margin-bottom: 16px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  nav { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 10px 0 4px; font-size: 13px; }
+  kbd { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code); border: 1px solid var(--line);
+        border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; white-space: nowrap; }
+  code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code); border-radius: 4px; padding: 1px 4px;
+         word-break: break-all; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 14px; font-size: 13.5px; }
+  th, td { text-align: left; vertical-align: top; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+  th { background: var(--head); font-weight: 600; }
+  td:first-child { white-space: nowrap; }
+  .note { color: var(--muted); font-size: 13px; }
+  .manual { display: inline-block; margin: 6px 0 4px; padding: 7px 14px; border-radius: 8px; background: var(--accent);
+            color: #fff; font-weight: 600; }
+  .manual:hover { text-decoration: none; filter: brightness(1.08); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<h1><span data-text="appName">Game</span> Help</h1>
+<div class="sub"><span data-text="systemName">Game Boy</span> game, emulated by mGBA <span data-text="mgbaVersion"></span></div>
+
+<div data-if="manual">
+  <a class="manual" href="gbp:manual">Open the Game Manual</a>
+  <div class="note">The original instruction booklet, also in Help › Game Manual (<kbd>⌥⌘?</kbd>).</div>
+</div>
+
+<nav>
+  <a href="#playing">Playing</a><a href="#window">The window</a><a href="#menus">Menus</a><a href="#settings">Settings</a>
+  <a href="#saves">Saves and states</a><a href="#files">Where files go</a><a href="#tips">Tips</a>
+</nav>
+
+<h2 id="playing">Playing</h2>
+<table>
+  <tr><th>Console</th><th>Keyboard</th><th>Game controller</th></tr>
+  <tr><td>A</td><td><kbd data-key="A">X</kbd></td><td>Right face button</td></tr>
+  <tr><td>B</td><td><kbd data-key="B">Z</kbd></td><td>Bottom face button</td></tr>
+  <tr data-if="gba"><td>L</td><td><kbd data-key="L">A</kbd></td><td>Left shoulder</td></tr>
+  <tr data-if="gba"><td>R</td><td><kbd data-key="R">S</kbd></td><td>Right shoulder</td></tr>
+  <tr><td>Start</td><td><kbd data-key="Start">Return</kbd></td><td>Menu button</td></tr>
+  <tr><td>Select</td><td><kbd data-key="Select">Delete</kbd></td><td>Options button</td></tr>
+  <tr><td>D-pad</td><td><kbd data-key="Up">↑</kbd> <kbd data-key="Down">↓</kbd> <kbd data-key="Left">←</kbd> <kbd data-key="Right">→</kbd></td><td>D-pad or left stick</td></tr>
+  <tr><td>Fast-forward (hold)</td><td><kbd data-key="fastForward">Tab</kbd></td><td>Right trigger</td></tr>
+  <tr><td>Rewind (hold)</td><td><kbd data-key="rewind">`</kbd></td><td>Left trigger</td></tr>
+  <tr data-if="tilt"><td>Tilt</td><td>—</td><td>Right stick</td></tr>
+</table>
+<p>The keys shown are your current ones. Change them in Settings › Controls. Controllers are mapped by button
+position, as on the console, whatever their labels say.</p>
+<p data-if="rumble">This cartridge has a rumble motor. A controller that supports haptics rumbles with it.</p>
+<p data-if="tilt">This cartridge has a tilt or motion sensor. Tilt the console with a controller's right stick.</p>
+<p data-if="lightSensor">This cartridge has a solar sensor. Set the amount of sunlight in Emulation › Solar Sensor:
+<kbd>⌘[</kbd> darker, <kbd>⌘]</kbd> brighter.</p>
+
+<h2 id="window">The window</h2>
+<ul>
+  <li><b>Title bar:</b> the picture fills the window. The title and window buttons appear when the mouse is at the top
+    of the window and hide again two seconds later. Drag the picture to move the window.</li>
+  <li><b>Borderless</b> (<kbd>⌘B</kbd>): no title bar or border, and the window stays above other windows. Drag the
+    picture to move it.</li>
+  <li><b>Full screen</b> (<kbd>⌃⌘F</kbd>): the picture is letterboxed in black and the pointer hides until you move the
+    mouse. Press <kbd>Esc</kbd> to leave. Full screen turns borderless off.</li>
+  <li><b>Size:</b> View › Frame Size sets the picture to 1×–6× the console's screen (<kbd>⌘1</kbd>–<kbd>⌘6</kbd>);
+    Actual Size (<kbd>⌃⌘A</kbd>) is 1×. With Lock Aspect Ratio (<kbd>⌘A</kbd>) on, resizing keeps the screen's shape.</li>
+  <li><b>Display sleep:</b> the display stays awake while the game runs and isn't paused, since a controller doesn't
+    count as activity. Turn this off in Settings › General.</li>
+</ul>
+<p>The window's size, position and borderless setting are remembered.</p>
+
+<h2 id="menus">Menus</h2>
+<p>These are mGBA's menus, keeping what applies to this one game.</p>
+
+<h3><span data-text="appName">Game</span></h3>
+<table>
+  <tr><td>About</td><td></td><td>The game, its ROM and the mGBA version</td></tr>
+  <tr><td>Settings…</td><td><kbd>⌘,</kbd></td><td>See <a href="#settings">Settings</a></td></tr>
+  <tr><td>Quit</td><td><kbd>⌘Q</kbd></td><td>Saves the battery save and settings</td></tr>
+</table>
+
+<h3>File</h3>
+<table>
+  <tr><td>Import Battery Save…</td><td></td><td>Replaces the game's save with a <code>.sav</code> file (an mGBA save, for example), then resets</td></tr>
+  <tr><td>Export Battery Save…</td><td></td><td>Copies the game's save to a file</td></tr>
+  <tr><td>Show Save in Finder</td><td></td><td>Opens the save folder</td></tr>
+  <tr><td>Load State › Slot 1–9</td><td><kbd>F1</kbd>–<kbd>F9</kbd></td><td>Returns to a saved moment</td></tr>
+  <tr><td>Save State › Slot 1–9</td><td><kbd>⇧F1</kbd>–<kbd>⇧F9</kbd></td><td>Saves this moment</td></tr>
+  <tr><td>Load State from File…</td><td><kbd>⌘O</kbd></td><td>Loads a state file (mGBA's <code>.ss0</code>–<code>.ss9</code> work too)</td></tr>
+  <tr><td>Save State to File…</td><td><kbd>⇧⌘S</kbd></td><td>Saves a state anywhere</td></tr>
+  <tr><td>Take Screenshot</td><td><kbd>F12</kbd></td><td>A PNG in the screenshots folder</td></tr>
+  <tr><td>Close</td><td><kbd>⌘W</kbd></td><td>Closes the game (and quits)</td></tr>
+</table>
+<p class="note">On a Mac keyboard the function keys may need <kbd>fn</kbd>.</p>
+
+<h3>Emulation</h3>
+<table>
+  <tr><td>Pause</td><td><kbd>⌘P</kbd></td><td>Stops and resumes the game</td></tr>
+  <tr><td>Next Frame</td><td><kbd>⌘N</kbd></td><td>Pauses, then advances one frame each time</td></tr>
+  <tr><td>Reset</td><td><kbd>⌘R</kbd></td><td>Like switching the console off and on (the battery save stays)</td></tr>
+  <tr><td>Fast Forward</td><td><kbd>⇧⌘F</kbd></td><td>Toggles fast-forward; hold <kbd data-key="fastForward">Tab</kbd> for a burst. The speed is in Settings › Emulation</td></tr>
+  <tr data-if="lightSensor"><td>Solar Sensor</td><td><kbd>⌘[</kbd> <kbd>⌘]</kbd></td><td>The sunlight the cartridge sees, levels 0–10</td></tr>
+  <tr><td>Cheats…</td><td><kbd>⇧⌘C</kbd></td><td>Add GameShark, Action Replay or Code Breaker codes, switch them on and off, or import a cheats file</td></tr>
+</table>
+
+<h3>View</h3>
+<table>
+  <tr><td>Frame Size</td><td><kbd>⌘1</kbd>–<kbd>⌘6</kbd></td><td>1× to 6× the console's screen</td></tr>
+  <tr><td>Actual Size</td><td><kbd>⌃⌘A</kbd></td><td>1×</td></tr>
+  <tr><td>Enter Full Screen</td><td><kbd>⌃⌘F</kbd></td><td><kbd>Esc</kbd> leaves</td></tr>
+  <tr><td>Borderless Window</td><td><kbd>⌘B</kbd></td><td>No title bar, floats above other windows</td></tr>
+  <tr><td>Lock Aspect Ratio</td><td><kbd>⌘A</kbd></td><td>Keeps the screen's shape</td></tr>
+  <tr><td>Force Integer Scaling</td><td></td><td>Only whole multiples of the screen, for even pixels</td></tr>
+  <tr><td>Interframe Blending</td><td></td><td>Blends each frame with the last, as the original LCD did; some games flicker effects on purpose</td></tr>
+  <tr><td>Bilinear Filtering</td><td></td><td>Smooth instead of sharp pixels</td></tr>
+  <tr data-if="!gba"><td>Super Game Boy Borders</td><td></td><td>Shows the border of Super Game Boy games</td></tr>
+  <tr><td>Mute</td><td><kbd>⇧⌘M</kbd></td><td>Sound off and on</td></tr>
+</table>
+
+<h3>Help</h3>
+<table>
+  <tr><td><span data-text="appName">Game</span> Help</td><td><kbd>⌘?</kbd></td><td>This page</td></tr>
+  <tr data-if="manual"><td>Game Manual</td><td><kbd>⌥⌘?</kbd></td><td>The game's original manual</td></tr>
+  <tr><td>mGBA Website</td><td></td><td>mgba.io</td></tr>
+</table>
+
+<h2 id="settings">Settings</h2>
+<p>Settings (<kbd>⌘,</kbd>) belong to this game only. They are mGBA's own settings, keeping what applies to it.</p>
+
+<h3>General</h3>
+<ul>
+  <li><b>Folders:</b> where battery saves, save states and screenshots go. Choosing a new save folder copies the save
+    there (unless one is already there, which is then used). <b>Default</b> goes back to the game's own folder.</li>
+  <li><b>Pause when the app is in the background.</b></li>
+  <li><b>Keep the display awake while playing.</b></li>
+</ul>
+
+<h3>Audio/Video</h3>
+<ul>
+  <li><b>Volume</b> and <b>Mute</b>.</li>
+  <li data-if="gba"><b>Clean up GBA music:</b> GBA games mix their music at a low rate of their own, and the console
+    plays it without smoothing, which adds a harsh hiss above the music. Small speakers can't reproduce it; studio
+    monitors and headphones do. This filters it out, following the game's rate. On by default.</li>
+  <li><b>Lock aspect ratio</b>, <b>Borderless window</b>, <b>Force integer scaling</b>, <b>Interframe blending</b>,
+    <b>Bilinear filtering</b>: as in the View menu.</li>
+</ul>
+
+<h3>Emulation</h3>
+<ul>
+  <li><b>Show the BIOS boot animation:</b> the <span data-if="gba">Game Boy Advance</span><span data-if="!gba">Game Boy</span>
+    start-up logo.</li>
+  <li><b>Fast-forward speed:</b> 2×–8×, or unbounded (as fast as the Mac can go).</li>
+  <li><b>Idle loops:</b> how mGBA skips a game's busy waiting, to save power. "Detect and remove" suits nearly every
+    game; "Run all" is the most exact.</li>
+  <li><b>Allow opposing directions:</b> left and right (or up and down) at once, which some games mishandle.</li>
+  <li><b>Rewind:</b> on or off, how many states it keeps (600 by default, about ten seconds) and how often it records one.</li>
+</ul>
+
+<div data-if="!gba">
+<h3>Game Boy</h3>
+<ul>
+  <li><b>Model:</b> which console runs the game: autodetect, Game Boy, Super Game Boy, Game Boy Color or Game Boy
+    Advance. Some games behave differently on each; Super Game Boy games show their border and colours.</li>
+  <li><b>Super Game Boy borders.</b></li>
+  <li><b>Colorization:</b> colours for original Game Boy games, from the Game Boy Color's or the Super Game Boy's
+    built-in palettes.</li>
+  <li><b>Palette:</b> a preset palette for black-and-white games.</li>
+</ul>
+</div>
+
+<div data-if="gba">
+<h3>Game Boy Advance</h3>
+<ul>
+  <li><b>Game Boy Player features:</b> rumble in the games that supported the GameCube's Game Boy Player.</li>
+  <li data-if="lightSensor"><b>Solar sensor:</b> the amount of sunlight, as in the Emulation menu.</li>
+</ul>
+</div>
+
+<h3>Controls</h3>
+<p>Click a button's key, then press the new key. <b>Restore Defaults</b> brings back the standard keys. Game controllers need no setup.</p>
+
+<h2 id="saves">Saves and states</h2>
+<ul>
+  <li><b>Battery save:</b> the game's own save, as on the cartridge. It is written while you play and when you quit,
+    and it uses mGBA's file name, so a save from mGBA can be imported (File › Import Battery Save) or copied in.</li>
+  <li><b>Save states</b> freeze the whole console at one moment, in nine slots or in files, in mGBA's format.
+    Loading a state doesn't change the battery save; the game writes that again the next time it saves.</li>
+  <li><b>Rewind:</b> hold <kbd data-key="rewind">`</kbd> (or the left trigger) to go back in time.</li>
+</ul>
+
+<h2 id="files">Where files go</h2>
+<table>
+  <tr><td>Everything</td><td><code data-text="dataFolder"></code></td></tr>
+  <tr><td>Battery save</td><td><code data-text="saveFolder"></code>/<code><span data-text="romBaseName"></span>.sav</code></td></tr>
+  <tr><td>Save states</td><td><code data-text="stateFolder"></code></td></tr>
+  <tr><td>Screenshots</td><td><code data-text="screenshotFolder"></code></td></tr>
+  <tr><td>Settings</td><td><code>config.ini</code> in the first folder</td></tr>
+</table>
+<p>Rebuilding this app with GB App Builder keeps its save and settings, which belong to the app's name.</p>
+
+<h2 id="tips">Tips</h2>
+<ul>
+  <li>If the game looks too small or too big, use <kbd>⌘1</kbd>–<kbd>⌘6</kbd>, or full screen.</li>
+  <li>If the picture flickers, try View › Interframe Blending.</li>
+  <li>Controllers can be connected or switched on at any time while the game runs.</li>
+  <li data-if="rtc">This cartridge has a clock. It follows your Mac's clock.</li>
+</ul>
+
+<p class="note" data-if="manual">The manual came from <span data-text="manualSource"></span>.</p>
+<p class="note">mGBA © Jeffrey Pfau and contributors, under the Mozilla Public License 2.0 (<a href="https://mgba.io">mgba.io</a>).
+This app was made with GB App Builder.</p>
+
+<script>
+(function () {
+  var gbp = window.gbp || {};
+  document.querySelectorAll("[data-if]").forEach(function (el) {
+    var cond = el.getAttribute("data-if"), not = cond.charAt(0) === "!", key = not ? cond.slice(1) : cond;
+    var value = !!gbp[key];
+    el.hidden = not ? value : !value;
+  });
+  document.querySelectorAll("[data-text]").forEach(function (el) {
+    var value = gbp[el.getAttribute("data-text")];
+    if (value !== undefined && value !== "") el.textContent = value;
+  });
+  var keys = gbp.keys || {};
+  document.querySelectorAll("[data-key]").forEach(function (el) {
+    var value = keys[el.getAttribute("data-key")];
+    if (value) el.textContent = value;
+  });
+  if (gbp.appName) document.title = gbp.appName + " Help";
+})();
+</script>
+</body>
+</html>

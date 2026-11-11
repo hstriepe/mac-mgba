@@ -198,6 +198,11 @@ struct SettingsView: View {
                     Slider(value: model.double("volume", 256), in: 0...256)
                 }
                 Toggle("Mute", isOn: model.bool("mute"))
+                if !model.isGB {
+                    Toggle("Clean up GBA music", isOn: model.bool(EmulatorSession.audioFilterKey))
+                    Text("Filters out the hiss above the game's own mixing rate. It is inaudible on small speakers but harsh on studio monitors and headphones.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
             Section("Video") {
                 Toggle("Lock aspect ratio", isOn: model.bool("lockAspectRatio"))

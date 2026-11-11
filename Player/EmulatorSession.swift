@@ -108,6 +108,7 @@ final class EmulatorSession: @unchecked Sendable {
             "rewindBufferInterval": "1", "videoScale": "3", "pauseOnFocusLost": "0", "sgb.borders": "1",
             "idleOptimization": "detect", "allowOpposingDirections": "1", "solarLevel": "6",
             GameWindowController.borderlessKey: "0", GameWindowController.preventDisplaySleepKey: "1",
+            EmulatorSession.audioFilterKey: "1",
         ]
         for (key, value) in playerDefaults where gbp_config_get(core, key) == nil {
             gbp_config_set_default(core, key, value)
@@ -250,9 +251,14 @@ final class EmulatorSession: @unchecked Sendable {
 
     func setConfig(_ key: String, _ value: Bool) { setConfig(key, value ? "1" : "0") }
 
+    /// Player key (not mGBA's): the GBA music filter in the bridge (`gbp_set_audio_filter`).
+    static let audioFilterKey = "gbplayer.audioFilter"
+
     func applyAudioSettings() {
         let volume = Float(configInt("volume") ?? 256) / 256
         audio.volume = configBool("mute") ? 0 : min(max(volume, 0), 1)
+        let filter = configBool(Self.audioFilterKey)
+        withCore { gbp_set_audio_filter($0, filter) }
     }
 
     func reset() { withCore { gbp_reset($0) } }

@@ -19,6 +19,7 @@
 #ifdef M_CORE_GBA
 #include <mgba/gba/interface.h>
 #include <mgba/internal/gba/gba.h>
+#include <mgba/internal/gba/timer.h>
 #endif
 #ifdef M_CORE_GB
 #include <mgba/gb/interface.h>
@@ -53,6 +54,29 @@ struct GBPRumble {
 	struct GBPCore* p;
 };
 
+/* --- GBA music filter: 8th-order Butterworth low-pass (four biquads) and a DC blocker, per channel --- */
+
+#define FILTER_STAGES 4
+#define FILTER_MIX_MIN 4000
+#define FILTER_MIX_MAX 48000
+/* Cutoff as a fraction of the mix rate: just below its Nyquist frequency (0.5). */
+#define FILTER_CUTOFF_RATIO 0.45
+#define FILTER_DC_HZ 10.0
+
+struct GBPBiquad {
+	double b0, b1, b2, a1, a2;
+	double z1[2], z2[2];
+};
+
+struct GBPFilter {
+	bool enabled;
+	unsigned mixRate;
+	bool lowPass;
+	struct GBPBiquad stages[FILTER_STAGES];
+	double dcR;
+	double dcIn[2], dcOut[2];
+};
+
 struct GBPCore {
 	struct mCore* core;
 	char* romPath;
@@ -65,6 +89,7 @@ struct GBPCore {
 	/* Core audio (its own, possibly changing, rate) -> audioOut at GBP_AUDIO_RATE. */
 	struct mAudioResampler resampler;
 	struct mAudioBuffer audioOut;
+	struct GBPFilter filter;
 
 	struct mCoreRewindContext rewind;
 	bool rewindEnabled;
@@ -172,6 +197,7 @@ GBPCore* gbp_create(const char* romPath, const char* defaultsPath, const char* c
 	mAudioBufferInit(&gbp->audioOut, AUDIO_OUT_SAMPLES, 2);
 	mAudioResamplerInit(&gbp->resampler, mINTERPOLATOR_SINC);
 	mAudioResamplerSetDestination(&gbp->resampler, &gbp->audioOut, GBP_AUDIO_RATE);
+	gbp->filter.dcR = 1.0 - 2.0 * M_PI * FILTER_DC_HZ / GBP_AUDIO_RATE;
 
 	gbp->lux.p = gbp;
 	gbp->lux.d.sample = _luxSample;
@@ -368,9 +394,106 @@ size_t gbp_audio_available(GBPCore* gbp) {
 	return mAudioBufferAvailable(&gbp->audioOut);
 }
 
+/* The rate the game feeds DirectSound FIFO A: the overflow rate of its timer (0 or 1). 0 if not plausible, as
+ * while a game reprograms its sound (Golden Sun reads 256 Hz for a frame). */
+unsigned gbp_audio_mix_rate(GBPCore* gbp) {
+#ifdef M_CORE_GBA
+	if (gbp->core->platform(gbp->core) != mPLATFORM_GBA) {
+		return 0;
+	}
+	struct GBA* gba = gbp->core->board;
+	const struct GBATimer* timer = &gba->timers[gba->audio.chATimer ? 1 : 0];
+	/* PrescaleBits is the shift itself (0, 6, 8 or 10), as mGBA's timer.c stores it. */
+	unsigned prescale = GBATimerFlagsGetPrescaleBits(timer->flags);
+	unsigned rate = (GBA_ARM7TDMI_FREQUENCY >> prescale) / (0x10000u - timer->reload);
+	if (rate < FILTER_MIX_MIN || rate > FILTER_MIX_MAX) {
+		return 0;
+	}
+	return rate;
+#else
+	UNUSED(gbp);
+	return 0;
+#endif
+}
+
+void gbp_set_audio_filter(GBPCore* gbp, bool enabled) {
+	if (gbp->filter.enabled == enabled) {
+		return;
+	}
+	struct GBPFilter* filter = &gbp->filter;
+	double dcR = filter->dcR;
+	memset(filter, 0, sizeof(*filter));
+	filter->dcR = dcR;
+	filter->enabled = enabled;
+}
+
+/* Butterworth: the poles of an 8th-order low-pass as four biquads (RBJ cookbook form), Q = 1 / (2 sin((2k+1)pi/16)). */
+static void _filterTune(struct GBPFilter* filter, unsigned mixRate) {
+	filter->mixRate = mixRate;
+	double cutoff = mixRate * FILTER_CUTOFF_RATIO;
+	/* Above ~20 kHz there is nothing to remove that the 48 kHz resampler hasn't already. */
+	filter->lowPass = cutoff < 20000.0;
+	if (!filter->lowPass) {
+		return;
+	}
+	double w0 = 2.0 * M_PI * cutoff / GBP_AUDIO_RATE;
+	double cosw = cos(w0);
+	for (int i = 0; i < FILTER_STAGES; ++i) {
+		double q = 1.0 / (2.0 * sin((2 * i + 1) * M_PI / (4 * FILTER_STAGES)));
+		double alpha = sin(w0) / (2.0 * q);
+		double a0 = 1.0 + alpha;
+		struct GBPBiquad* s = &filter->stages[i];
+		s->b0 = (1.0 - cosw) / 2.0 / a0;
+		s->b1 = (1.0 - cosw) / a0;
+		s->b2 = s->b0;
+		s->a1 = -2.0 * cosw / a0;
+		s->a2 = (1.0 - alpha) / a0;
+		/* The state carries over: a retune mid-song changes the cutoff without a click. */
+	}
+}
+
+static void _filterRun(struct GBPFilter* filter, int16_t* samples, size_t frames) {
+	for (size_t i = 0; i < frames; ++i) {
+		for (int ch = 0; ch < 2; ++ch) {
+			double x = samples[i * 2 + ch];
+			/* DC blocker: y = x - x[-1] + R y[-1] */
+			double y = x - filter->dcIn[ch] + filter->dcR * filter->dcOut[ch];
+			filter->dcIn[ch] = x;
+			filter->dcOut[ch] = y;
+			if (filter->lowPass) {
+				for (int k = 0; k < FILTER_STAGES; ++k) {
+					struct GBPBiquad* s = &filter->stages[k];
+					/* Transposed direct form II */
+					double out = s->b0 * y + s->z1[ch];
+					s->z1[ch] = s->b1 * y - s->a1 * out + s->z2[ch];
+					s->z2[ch] = s->b2 * y - s->a2 * out;
+					y = out;
+				}
+			}
+			if (y > 32767.0) {
+				y = 32767.0;
+			} else if (y < -32768.0) {
+				y = -32768.0;
+			}
+			samples[i * 2 + ch] = (int16_t) lrint(y);
+		}
+	}
+}
+
 size_t gbp_audio_read(GBPCore* gbp, int16_t* out, size_t maxFrames) {
 	_audioResample(gbp);
-	return mAudioBufferRead(&gbp->audioOut, out, maxFrames);
+	size_t read = mAudioBufferRead(&gbp->audioOut, out, maxFrames);
+	struct GBPFilter* filter = &gbp->filter;
+	if (filter->enabled && read) {
+		unsigned mixRate = gbp_audio_mix_rate(gbp);
+		if (mixRate && mixRate != filter->mixRate) {
+			_filterTune(filter, mixRate);
+		}
+		if (filter->mixRate) {
+			_filterRun(filter, out, read);
+		}
+	}
+	return read;
 }
 
 void gbp_set_keys(GBPCore* gbp, uint32_t keys) {

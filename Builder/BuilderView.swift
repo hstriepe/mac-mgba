@@ -10,6 +10,10 @@ final class BuilderModel: ObservableObject {
     @Published var icon: NSImage?
     @Published var iconSource = ""
     @Published var fetchingIcon = false
+    @Published var manual: URL?
+    @Published var manualSource: String?
+    @Published var manualStatus = ""
+    @Published var fetchingManual = false
     @Published var error: String?
     @Published var building = false
     @Published var log: [String] = []
@@ -21,6 +25,7 @@ final class BuilderModel: ObservableObject {
     @Published var showBIOSIntro = true
     @Published var interframeBlending = false
     @Published var sgbBorders = true
+    @Published var cleanGBAMusic = true
     @Published var customSaveFolder = ""
 
     let settings = BuilderSettings.shared
@@ -51,6 +56,10 @@ final class BuilderModel: ObservableObject {
             icon = nil
             iconSource = ""
             if settings.fetchBoxArt { fetchIcon() } else { useDefaultIcon() }
+            manual = nil
+            manualSource = nil
+            manualStatus = settings.fetchManuals ? "" : "Downloading manuals is off (Settings)"
+            if settings.fetchManuals { fetchManual() }
         } catch {
             rom = nil
             self.error = error.localizedDescription
@@ -73,6 +82,48 @@ final class BuilderModel: ObservableObject {
                 iconSource = "No box art found: mGBA's \(rom.system.uppercased()) icon"
             }
         }
+    }
+
+    /// Looks the manual up on archive.org by No-Intro name, then by title.
+    func fetchManual() {
+        guard let rom else { return }
+        let names = [datName, rom.sourceURL.deletingPathExtension().lastPathComponent, rom.baseName].compactMap { $0 }
+        fetchingManual = true
+        manualStatus = "Looking for the manual…"
+        Task {
+            let found = await ManualFinder.find(system: rom.system, names: names)
+            fetchingManual = false
+            guard self.rom == rom else { return }
+            if let found {
+                manual = found.file
+                manualSource = found.entry.url?.absoluteString
+                manualStatus = "\(found.entry.name).pdf (archive.org\(found.approximate ? ", another release" : ""))"
+            } else {
+                manual = nil
+                manualSource = nil
+                manualStatus = "No manual found on archive.org"
+            }
+        }
+    }
+
+    func chooseManual() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.pdf]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        setManual(from: url)
+    }
+
+    func setManual(from url: URL) {
+        guard url.pathExtension.lowercased() == "pdf" else { return }
+        manual = url
+        manualSource = url.lastPathComponent
+        manualStatus = url.lastPathComponent
+    }
+
+    func removeManual() {
+        manual = nil
+        manualSource = nil
+        manualStatus = "No manual"
     }
 
     func useDefaultIcon() {
@@ -109,7 +160,9 @@ final class BuilderModel: ObservableObject {
             "skipBios": showBIOSIntro ? "0" : "1",
             "interframeBlending": interframeBlending ? "1" : "0",
         ]
-        if rom?.system != "gba" {
+        if rom?.system == "gba" {
+            values["gbplayer.audioFilter"] = cleanGBAMusic ? "1" : "0"
+        } else {
             values["sgb.borders"] = sgbBorders ? "1" : "0"
             if !model.isEmpty {
                 for key in ["gb.model", "sgb.model", "cgb.model", "cgb.hybridModel", "cgb.sgbModel"] { values[key] = model }
@@ -127,7 +180,8 @@ final class BuilderModel: ObservableObject {
     private func request(_ rom: ROMInfo) -> BuildRequest {
         BuildRequest(rom: rom, appName: appName.trimmingCharacters(in: .whitespaces), romName: datName, icon: icon,
                      outputFolder: settings.outputURL, bundleIDPrefix: settings.bundleIDPrefix,
-                     signingIdentity: settings.identity, biosFolder: settings.biosURL, defaults: defaults)
+                     signingIdentity: settings.identity, biosFolder: settings.biosURL, defaults: defaults,
+                     manual: manual, manualSource: manualSource)
     }
 
     func build() {
@@ -242,12 +296,43 @@ struct BuilderView: View {
                         LabeledContent("Not used", value: rom.otherFilesInArchive.joined(separator: ", "))
                     }
                 }
+                Section("Help") {
+                    LabeledContent("Manual") {
+                        VStack(alignment: .trailing, spacing: 4) {
+                            HStack(spacing: 6) {
+                                if model.fetchingManual { ProgressView().controlSize(.small) }
+                                Text(model.manualStatus).font(.caption).foregroundStyle(.secondary)
+                                    .lineLimit(1).truncationMode(.middle)
+                            }
+                            HStack {
+                                if let manual = model.manual {
+                                    Button("Preview") { NSWorkspace.shared.open(manual) }
+                                }
+                                Button("Choose…") { model.chooseManual() }
+                                Button("Find") { model.fetchManual() }.disabled(model.fetchingManual)
+                                if model.manual != nil { Button("None") { model.removeManual() } }
+                            }
+                            .controlSize(.small)
+                        }
+                    }
+                    .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+                        _ = providers.first?.loadObject(ofClass: URL.self) { url, _ in
+                            if let url { Task { @MainActor in model.setManual(from: url) } }
+                        }
+                        return true
+                    }
+                    Text("Every app has Help for its menus and settings; the manual opens from Help › Game Manual.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 Section("Defaults (the app's Settings can change them)") {
                     Picker("Frame size", selection: $model.frameSize) {
                         ForEach(1...6, id: \.self) { Text("\($0)×").tag($0) }
                     }
                     Toggle("Show the BIOS boot animation", isOn: $model.showBIOSIntro)
                     Toggle("Interframe blending", isOn: $model.interframeBlending)
+                    if rom.system == "gba" {
+                        Toggle("Clean up GBA music (filter the hiss above the game's mixing rate)", isOn: $model.cleanGBAMusic)
+                    }
                     if rom.system != "gba" {
                         Picker("Game Boy model", selection: $model.model) {
                             Text("Autodetect").tag("")

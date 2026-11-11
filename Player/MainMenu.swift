@@ -127,6 +127,13 @@ enum MainMenu {
 
         // Help
         let help = submenu(main, "Help")
+        help.addItem(item("\(appName) Help", #selector(AppDelegate.showHelp(_:)), "?", target: target))
+        if session.manifest.manual != nil {
+            let manual = item("Game Manual", #selector(AppDelegate.showManual(_:)), "?", target: target)
+            manual.keyEquivalentModifierMask = [.command, .option]
+            help.addItem(manual)
+        }
+        help.addItem(.separator())
         help.addItem(item("mGBA Website", #selector(NSWorkspace.openMGBAWebsite(_:)), target: NSWorkspace.shared))
         NSApp.helpMenu = help
 

@@ -12,6 +12,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     private var input: InputController?
     private var settingsWindow: NSWindow?
     private var cheatsWindow: NSWindow?
+    private var helpWindow: HelpWindowController?
+    private var manualWindow: ManualWindowController?
     private var pausedByFocus = false
 
     var appName: String {
@@ -255,6 +257,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         cheatsWindow?.center()
         cheatsWindow?.makeKeyAndOrderFront(nil)
+    }
+
+    @objc func showHelp(_ sender: Any?) {
+        guard let session else { return }
+        if let helpWindow {
+            helpWindow.refresh()
+        } else {
+            let controller = HelpWindowController(session: session, appName: appName)
+            controller.onOpenManual = { [weak self] in self?.showManual(nil) }
+            helpWindow = controller
+        }
+        helpWindow?.showWindow(nil)
+    }
+
+    /// The manual the builder put in the app (`Resources/Game/Manual.pdf`).
+    @objc func showManual(_ sender: Any?) {
+        guard let session, let manual = session.manifest.manual,
+              let url = Bundle.main.url(forResource: "Game", withExtension: nil)?.appendingPathComponent(manual.file)
+        else { return }
+        if manualWindow == nil {
+            guard let controller = ManualWindowController(url: url, appName: appName) else {
+                showError("The manual could not be opened.")
+                return
+            }
+            manualWindow = controller
+        }
+        manualWindow?.showWindow(nil)
     }
 
     @objc func showAbout(_ sender: Any?) {
